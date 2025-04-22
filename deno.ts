@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.181.0/http/server.ts";
 
-const OPENAI_API_HOST = "www.hideonfate.top";
+const OPENAI_API_HOST = "us.ifopen.ai";
 
 serve(async (request) => {
   const url = new URL(request.url);
