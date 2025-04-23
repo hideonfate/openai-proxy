@@ -12,7 +12,7 @@ const readmeTemplate = new Response(readmeMd, {
     "content-type": "text/markdown; charset=utf-8",
     // 把 timeout 改为 0 => 无限制
     "connection": "keep-alive",
-    "keep-alive": "timeout=0,max=0",
+    "keep-alive": "timeout=1200,max=0",
   },
 });
 
@@ -38,7 +38,7 @@ async function handler(req: Request): Promise<Response> {
 
   // 关键：告诉上游“永远 keep-alive”
   forwardHeaders.set("connection", "keep-alive");
-  forwardHeaders.set("keep-alive", "timeout=0,max=0"); // ← 修改点
+  forwardHeaders.set("keep-alive", "timeout=1200,max=0"); // ← 修改点
 
   // ---------- 2.   发请求 ----------
   let upstreamRes: Response;
@@ -58,7 +58,7 @@ async function handler(req: Request): Promise<Response> {
 
   // 关键：同样告诉客户端“我也一直保持长连接”
   respHeaders.set("connection", "keep-alive");
-  respHeaders.set("keep-alive", "timeout=0,max=0");   // ← 修改点
+  respHeaders.set("keep-alive", "timeout=1200,max=0");   // ← 修改点
 
   return new Response(upstreamRes.body, {
     status: upstreamRes.status,
