@@ -38,8 +38,8 @@ async function handler(req: Request): Promise<Response> {
   const forwardHeaders = new Headers(req.headers);
   forwardHeaders.set("host", UPSTREAM_HOST);
   forwardHeaders.set("connection", "keep-alive");
-  // 告诉上游「请维持至少 600s 的长连接」
-  forwardHeaders.set("keep-alive", "timeout=600,max=0");
+  // 告诉上游「请维持至少 1200 的长连接」
+  forwardHeaders.set("keep-alive", "timeout=1200,max=0");
 
   let upstreamRes: Response;
   try {
@@ -57,7 +57,7 @@ async function handler(req: Request): Promise<Response> {
   // 取出上游返回的流和 headers，做必要的 keep-alive 覆盖
   const respHeaders = new Headers(upstreamRes.headers);
   respHeaders.set("connection", "keep-alive");
-  respHeaders.set("keep-alive", "timeout=600,max=0");
+  respHeaders.set("keep-alive", "timeout=1200,max=0");
 
   // 直接返回上游的 ReadableStream，流式转发
   return new Response(upstreamRes.body, {
