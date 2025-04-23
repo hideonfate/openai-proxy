@@ -1,47 +1,30 @@
-// proxy.ts
+import { serve } from "https://deno.land/std/http/server.ts";
 
-const OPENAI_API_HOST = "us.ifopen.ai";
-async function handleRequest(request: Request): Promise<Response> {
+const OPENAI_HOST = "us.ifopen.ai";
 
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+serve(async (req) => {
+// 构造完整目标 URL（含路径、查询串）
+const u = new URL(req.url);
+const target = https://${OPENAI_HOST}${u.pathname}${u.search};
 
-  if (pathname === '/' || pathname === '/index.html') {
-    return new Response('Proxy is Running！Details：https://github.com/tech-shrimp/deno-api-proxy', {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' }
-    });
-  } 
-  
-  const targetUrl = `https://${OPENAI_API_HOST}`;
+// 把原始请求克隆到目标地址
+const proxyReq = new Request(target, {
+method: req.method,
+headers: (() => {
+const h = new Headers(req.headers);
+h.delete("host");
+h.delete("content-length");
+return h;
+})(),
+body: req.body,     // Deno 里直接传即可
+});
 
-  try {
-    const headers = new Headers();
-    const allowedHeaders = ['accept', 'content-type', 'authorization'];
-    for (const [key, value] of request.headers.entries()) {
-      if (allowedHeaders.includes(key.toLowerCase())) {
-        headers.set(key, value);
-      }
-    }
+// 向上游发送
+const resp = await fetch(proxyReq);
 
-    const response = await fetch(targetUrl, {
-      method: request.method,
-      headers: headers,
-      body: request.body
-    });
+// 想改什么头，在这里处理
+resp.headers.set("Referrer-Policy", "no-referrer");
 
-    const responseHeaders = new Headers(response.headers);
-    responseHeaders.set('Referrer-Policy', 'no-referrer');
-
-    return new Response(response.body, {
-      status: response.status,
-      headers: responseHeaders
-    });
-
-  } catch (error) {
-    console.error('Failed to fetch:', error);
-    return new Response('Internal Server Error', { status: 500 });
-  }
-};
-
-Deno.serve(handleRequest); 
+// 直接把 Response 往回丢，流就能完整透传
+return resp;
+});
