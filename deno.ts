@@ -1,4 +1,4 @@
-const OPENAI_API_HOST = "us.ifopen.ai";
+const OPENAI_API_HOST = "api.ohmygpt.com";
 
 Deno.serve(async (req) => {
   // 1. 构造上游 URL
