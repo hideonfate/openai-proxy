@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std/http/server.ts";
 
 
 const apiMapping = {
-  '/': 'https://api.ohmygpt.com'
+  '/ohmygpt': 'https://api.ohmygpt.com'
 };
 
 serve(async (request) => {
