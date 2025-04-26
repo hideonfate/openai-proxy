@@ -1,28 +1,66 @@
-const OPENAI_API_HOST = "api.ohmygpt.com";
+import { serve } from "https://deno.land/std/http/server.ts";
 
-Deno.serve(async (req) => {
-  // 1. 构造上游 URL
-  const url = new URL(req.url);
-  url.hostname = OPENAI_API_HOST;
-  // 注意：必须把 host 头也改成 OPENAI_API_HOST
-  const headers = new Headers(req.headers);
-  headers.set("host", OPENAI_API_HOST);
+const targetUrl  = "api.ohmygpt.com";
 
-  // 2. 发起 fetch，不做任何超时、buffer 操作
-  const upstreamResp = await fetch(url.toString(), {
-    method: req.method,
-    headers,
-    body: req.body,
-    redirect: "follow",
-  });
+serve(async (request) => {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
 
-  // 3. 原封不动用流的方式把上游 body 透传给客户端
-  //    同时删除 content-length，让底层自动用 chunked‐transfer‐encoding
-  const respHeaders = new Headers(upstreamResp.headers);
-  respHeaders.delete("content-length");
+  if (pathname === '/' || pathname === '/index.html') {
+    return new Response('Service is running!', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
+    });
+  }
+  
+  if (pathname === '/robots.txt') {
+    return new Response('User-agent: *\nDisallow: /', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
 
-  return new Response(upstreamResp.body, {
-    status: upstreamResp.status,
-    headers: respHeaders,
-  });
+  const [prefix, rest] = extractPrefixAndRest(pathname, Object.keys(apiMapping));
+  if (!prefix) {
+    return new Response('Not Found', { status: 404 });
+  }
+  
+  try {
+    const headers = new Headers();
+    const allowedHeaders = ['accept', 'content-type', 'authorization'];
+    for (const [key, value] of request.headers.entries()) {
+      if (allowedHeaders.includes(key.toLowerCase())) {
+        headers.set(key, value);
+      }
+    }
+
+    const response = await fetch(targetUrl, {
+      method: request.method,
+      headers: headers,
+      body: request.body
+    });
+
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.set('X-Content-Type-Options', 'nosniff');
+    responseHeaders.set('X-Frame-Options', 'DENY');
+    responseHeaders.set('Referrer-Policy', 'no-referrer');
+
+    return new Response(response.body, {
+      status: response.status,
+      headers: responseHeaders
+    });
+
+  } catch (error) {
+    console.error('Failed to fetch:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
 });
+
+function extractPrefixAndRest(pathname, prefixes) {
+  for (const prefix of prefixes) {
+    if (pathname.startsWith(prefix)) {
+      return [prefix, pathname.slice(prefix.length)];
+    }
+  }
+  return [null, null];
+}
