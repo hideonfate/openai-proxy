@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 
-const targetUrl  = "api.ohmygpt.com";
+
+
+const apiMapping = {
+  '/': 'https://api.ohmygpt.com'
+};
 
 serve(async (request) => {
   const url = new URL(request.url);
@@ -20,6 +24,10 @@ serve(async (request) => {
     });
   }
 
+  
+ const targetUrl = `${apiMapping[prefix]}${rest}`;
+
+  
   const [prefix, rest] = extractPrefixAndRest(pathname, Object.keys(apiMapping));
   if (!prefix) {
     return new Response('Not Found', { status: 404 });
